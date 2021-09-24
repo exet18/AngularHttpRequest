@@ -1,10 +1,8 @@
+import {IWeather} from "./iweather";
+import {IMain} from "./imain";
+
 export interface IData {
-  weather: {
-    main: string
-    icon: string
-  }[]
-  main:{
-    temp: string
-  }
+  weather: IWeather[]
+  main: IMain
   name: string
 }

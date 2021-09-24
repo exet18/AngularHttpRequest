@@ -1,14 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {WeatherService} from "../service/weather.service";
-import {FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
+import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {
+  catchError,
   debounceTime,
   distinctUntilChanged, filter,
-  retryWhen,
-  switchMap,
-  tap
+  switchMap, tap,
 } from "rxjs/operators";
 import {IData} from "../interface/idata";
+import {of} from "rxjs";
 
 @Component({
   selector: 'app-weather',
@@ -19,32 +19,39 @@ export class WeatherComponent implements OnInit {
 
   requestForm: FormGroup;
   weatherData?: IData
-  requestError : boolean = false
-  show : boolean = false
-  src?: string
+  error: string = ''
 
-  constructor(private readonly http : WeatherService, private formBuilder : FormBuilder) {
+  constructor(private readonly http: WeatherService, private formBuilder: FormBuilder) {
     this.requestForm = this.formBuilder.group({
-      city: new FormControl('',[Validators.pattern(/^[a-zA-Z_ ]*$/)])
+      city: ['', Validators.pattern(/^[a-zA-Z_ ]*$/)]
     })
   }
+
   ngOnInit(): void {
-    const stream$ = this.requestForm.controls.city.valueChanges
-    stream$.pipe(
+    this.requestForm.controls.city.valueChanges.pipe(
+      filter(value => value !== '' && value !== null),
       debounceTime(1000),
       distinctUntilChanged(),
-      switchMap(city => this.http.getWeatherData(city)),
-      retryWhen(errors => errors.pipe(
-        filter(err => err.status == 404),
-        tap(() =>{
-          this.requestError = true
-          this.show = false
+      switchMap(city => this.http.getWeatherData(city).pipe(
+        catchError(err => {
+          return of(err).pipe(
+            tap(value => this.error = value.error.message)
+          )
         })
-      ))
-    ).subscribe(value => {
-      this.weatherData = value
-      this.requestError = false
-      this.show = true
-    })
+      )),
+      tap(item => {
+        if (item.status) {
+          this.weatherData = undefined
+        } else {
+          this.weatherData = item
+        }
+      })
+    ).subscribe()
   }
+
+  Reset(): void {
+    this.requestForm.get('city')?.setValue('')
+    this.weatherData = undefined
+  }
+
 }
