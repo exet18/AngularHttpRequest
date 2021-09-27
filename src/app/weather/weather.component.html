@@ -2,11 +2,11 @@
   <form [formGroup]="requestForm" class="weather-form">
     <div class="find-weather">
       <input type="text" formControlName="city" class="inputCity">
-      <button (click)="Reset()">Reset</button>
-      <div *ngIf="requestForm.controls.city.invalid && requestForm.controls.city.touched" class="input-errors">
-        <p class="input-errors" *ngIf="requestForm.controls.city.errors && requestForm.controls.city.errors.pattern">Enter only letters</p>
+      <button (click)="reset()">Reset</button>
+      <div *ngIf="validInput" class="input-errors">
+        <p class="input-errors" *ngIf="onlyLetter">ENTER ONLY LETTERS</p>
       </div>
-      <p *ngIf="!weatherData" class="request-errors">
+      <p *ngIf="error" class="request-errors">
         {{error | uppercase}}
       </p>
     </div>

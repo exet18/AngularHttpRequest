@@ -1,13 +1,13 @@
 import {Component, OnInit} from '@angular/core';
 import {WeatherService} from "../service/weather.service";
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import {AbstractControl, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {
   catchError,
   debounceTime,
   distinctUntilChanged, filter,
   switchMap, tap,
 } from "rxjs/operators";
-import {IData} from "../interface/idata";
+import {Weather} from "../interface/weather";
 import {of} from "rxjs";
 
 @Component({
@@ -18,40 +18,48 @@ import {of} from "rxjs";
 export class WeatherComponent implements OnInit {
 
   requestForm: FormGroup;
-  weatherData?: IData
+  weatherData: Weather | undefined
   error: string = ''
 
   constructor(private readonly http: WeatherService, private formBuilder: FormBuilder) {
     this.requestForm = this.formBuilder.group({
-      city: ['', Validators.pattern(/^[a-zA-Z_ ]*$/)]
+      city: [null, Validators.pattern(/^[a-zA-Z_ ]*$/)]
     })
   }
-
+  get validInput() : boolean {
+    return this.requestForm.controls.city.invalid && this.requestForm.controls.city.touched;
+  }
+  get onlyLetter() : boolean {
+    return this.requestForm.controls.city.errors && this.requestForm.controls.city.errors.pattern;
+  }
+  get cityControl () : FormControl{
+    return this.requestForm.get('city') as FormControl
+  }
   ngOnInit(): void {
     this.requestForm.controls.city.valueChanges.pipe(
-      filter(value => value !== '' && value !== null),
+      tap(() =>{
+        this.weatherData = undefined;
+        this.error = '';
+      }),
       debounceTime(1000),
       distinctUntilChanged(),
+      filter(value => value !== '' && value !== ' ' && this.validOnlyLetter(value) && value.length < 10),
       switchMap(city => this.http.getWeatherData(city).pipe(
         catchError(err => {
-          return of(err).pipe(
-            tap(value => this.error = value.error.message)
-          )
+          this.weatherData = undefined;
+          this.error = err.error.message;
+          return of(undefined);
         })
       )),
-      tap(item => {
-        if (item.status) {
-          this.weatherData = undefined
-        } else {
-          this.weatherData = item
-        }
-      })
+      tap(item => this.weatherData = item)
     ).subscribe()
   }
-
-  Reset(): void {
-    this.requestForm.get('city')?.setValue('')
-    this.weatherData = undefined
+  reset(): void {
+    this.cityControl.setValue('', { emitEvent: true });
+    this.weatherData = undefined;
+    this.error = '';
   }
-
+  validOnlyLetter(value : string) : boolean {
+    return !!value.match(/^[a-zA-Z_ ]*$/);
+  }
 }

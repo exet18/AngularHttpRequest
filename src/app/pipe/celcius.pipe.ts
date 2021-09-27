@@ -1,15 +1,15 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import {Pipe, PipeTransform} from '@angular/core';
 
 @Pipe({
   name: 'celsius'
 })
 export class CelsiusPipe implements PipeTransform {
 
-  transform(value: string, ...args: unknown[]): number{
-    if(0 / Number(value) !== 0){
-      return 0
-    }else{
-      return parseInt(value,10) - 273
+  transform(value: string, ...args: unknown[]): number {
+    const degrees = Number(value);
+    if (isNaN(degrees)) {
+      return 0;
     }
+    return parseInt(value, 10) - 273;
   }
 }
