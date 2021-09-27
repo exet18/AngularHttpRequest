@@ -1,0 +1,20 @@
+<div class="container">
+  <form [formGroup]="requestForm" class="weather-form">
+    <div class="find-weather">
+      <input type="text" formControlName="city" class="inputCity">
+      <button (click)="reset()">Reset</button>
+      <div *ngIf="validInput" class="input-errors">
+        <p class="input-errors" *ngIf="onlyLetter">ENTER ONLY LETTERS</p>
+      </div>
+      <p *ngIf="error" class="request-errors">
+        {{error | uppercase}}
+      </p>
+    </div>
+    <div *ngIf="weatherData" class="weather">
+      <h3>{{weatherData.name}}</h3>
+      <p>{{weatherData.weather[0].main}}</p>
+      <img src="https://openweathermap.org/img/wn/{{weatherData.weather[0].icon}}@2x.png" alt="Wrong">
+      <p>{{weatherData.main.temp | celsius}}</p>
+    </div>
+  </form>
+</div>
